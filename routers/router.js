@@ -42,9 +42,27 @@ router.get('/score/:movie', async (req, res) => {
     if (i == 1) {
       const userScore = parseFloat($(e).children().text())
       result = { ...result, userScore }
-      res.json(result)
     }
   })
+  $('.based_on').each(function (i, e) {
+    if (i == 0) {
+      const criticCount = parseInt(
+        $(e)
+          .text()
+          .substring(9, $(e).text().length - 15)
+      )
+      result = { ...result, criticCount }
+    }
+    if (i == 1) {
+      const userCount = parseInt(
+        $(e)
+          .text()
+          .substring(9, $(e).text().length - 6)
+      )
+      result = { ...result, userCount }
+    }
+  })
+  res.json(result)
 })
 
 router.get('/reviews/:movie', async (req, res) => {
