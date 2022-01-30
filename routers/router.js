@@ -16,7 +16,13 @@ router.get('/search/:expression', async (req, res) => {
     const url = `https://www.metacritic.com/${$(e).children().attr('href')}`
     const year = parseInt($(e).siblings('p').text().trim().substring(7, 12))
     const movieName = url.substring(url.lastIndexOf('/') + 1, url.length)
-    results = [...results, { title, url, year, movieName }]
+    const imageUrl = $(e)
+      .parent()
+      .parent()
+      .siblings('div')
+      .children()
+      .attr('src')
+    results = [...results, { title, url, year, movieName, imageUrl }]
   })
   res.send(results)
 })
