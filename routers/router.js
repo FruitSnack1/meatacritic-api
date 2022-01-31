@@ -62,6 +62,11 @@ router.get('/score/:movie', async (req, res) => {
       result = { ...result, userCount }
     }
   })
+  result = { ...result, title: $('.product_page_title').children('h1').text() }
+  result = { ...result, year: $('.release_year').text() }
+  result = { ...result, imageUrl: $('.summary_img').attr('src') }
+  if (!result.criticScore) result.criticScore = -1
+  if (!result.criticCount) result.criticCount = -1
   res.json(result)
 })
 
