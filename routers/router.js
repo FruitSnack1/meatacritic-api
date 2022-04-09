@@ -10,28 +10,54 @@ router.get('/search/:expression', async (req, res) => {
   const html = await htmlHelper.getHtml(
     `https://www.metacritic.com/search/movie/${expression}/results`
   )
-  const $ = cheerio.load(html)
+
+  const html2 = await htmlHelper.getHtml(
+    `https://www.metacritic.com/search/tv/${expression}/results`
+  )
+
+  let $ = cheerio.load(html)
   $('.product_title').each(function (i, e) {
     const title = $(e).children().text().trim()
     const url = `https://www.metacritic.com/${$(e).children().attr('href')}`
     const year = parseInt($(e).siblings('p').text().trim().substring(7, 12))
-    const movieName = url.substring(url.lastIndexOf('/') + 1, url.length)
+    const name = url.substring(url.lastIndexOf('/') + 1, url.length)
+    const type = 'movie'
     const imageUrl = $(e)
       .parent()
       .parent()
       .siblings('div')
       .children()
       .attr('src')
-    results = [...results, { title, url, year, movieName, imageUrl }]
+    results = [...results, { title, url, year, name, type, imageUrl }]
   })
+
+  $ = cheerio.load(html2)
+  $('.product_title').each(function (i, e) {
+    const title = $(e).children().text().trim()
+    const url = `https://www.metacritic.com/${$(e).children().attr('href')}`
+    const year = parseInt($(e).siblings('p').text().trim().substring(9, 14))
+    const name = url.substring(url.lastIndexOf('/') + 1, url.length)
+    const type = 'tv'
+    const imageUrl = $(e)
+      .parent()
+      .parent()
+      .siblings('div')
+      .children()
+      .attr('src')
+    results = [...results, { title, url, year, name, type, imageUrl }]
+  })
+
   res.send(results)
 })
 
-router.get('/score/:movie', async (req, res) => {
-  let result = {}
-  const { movie } = req.params
+router.get('/score/:type/:title', async (req, res) => {
+  let result = {
+    criticCount: 0,
+    userCount: 0,
+  }
+  const { title, type } = req.params
   const html = await htmlHelper.getHtml(
-    `https://www.metacritic.com/movie/${movie}`
+    `https://www.metacritic.com/${type}/${title}`
   )
   const $ = cheerio.load(html)
   $('.metascore_anchor').each(function (i, e) {
@@ -40,7 +66,7 @@ router.get('/score/:movie', async (req, res) => {
       result = { ...result, criticScore }
     }
     if (i == 1) {
-      const userScore = parseFloat($(e).children().text())
+      const userScore = parseFloat($(e).children().text()) * 10
       result = { ...result, userScore }
     }
   })
@@ -63,10 +89,18 @@ router.get('/score/:movie', async (req, res) => {
     }
   })
   result = { ...result, title: $('.product_page_title').children('h1').text() }
-  result = { ...result, year: $('.release_year').text() }
+  if (type == 'movie') {
+    result = { ...result, year: parseInt($('.release_year').text()) }
+  } else {
+    let year = $('.release_date').children().text()
+    result = {
+      ...result,
+      year: parseInt(year.substring(year.length - 4, year.length)),
+    }
+  }
   result = { ...result, imageUrl: $('.summary_img').attr('src') }
   if (!result.criticScore) result.criticScore = -1
-  if (!result.criticCount) result.criticCount = -1
+  if (!result.userScore) result.userScore = -1
   res.json(result)
 })
 
